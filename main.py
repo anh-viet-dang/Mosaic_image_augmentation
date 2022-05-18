@@ -2,7 +2,7 @@ import argparse
 import os.path as osp
 import os
 import random
-
+from uuid import uuid4
 import albumentations as A
 import numpy as np
 
@@ -56,10 +56,29 @@ def random_crop_savebboxes(image_name:str, image_dir:str, label_dir:str,
     return transformed_image, transformed_bboxes, transformed_class_labels
 
 
+def create_data_store_path(output_image_dir:str, output_label_dir:str, 
+                     image_file_list:list) -> tuple: 
+    
+    image_store_path = osp.sep.join([output_image_dir, 'mo_' + \
+                                image_file_list[0].split('.')[0] + '_' + \
+                                image_file_list[1].split('.')[0] + '_' + \
+                                image_file_list[2].split('.')[0] + '_' + \
+                                image_file_list[3].split('.')[0] + '.jpg'])
+    
+    label_store_path = osp.sep.join([output_label_dir, 'mo_' + \
+                                    image_file_list[0].split('.')[0] + '_' + \
+                                    image_file_list[1].split('.')[0] + '_' + \
+                                    image_file_list[2].split('.')[0] + '_' + \
+                                    image_file_list[3].split('.')[0] + '.txt'])
+    
+    return image_store_path, label_store_path
+
+
 def mosaic(image_file_list:list, image_dir:str, label_dir:str, 
            output_image_dir:str, output_label_dir:str, 
            mo_w:int, mo_h:int, scale_x:float, scale_y:float, 
-           min_area:int, min_visibility:float) -> None:
+           min_area:int, min_visibility:float,
+           display:bool=False) -> None:
     r"""
         Implement mosaic augmentation
         >>> image_file_list:    list of 4 images (only name of image, not path), [img_1.jpg, img_2.jpg, img_3.png, img_4.jpeg]
@@ -74,15 +93,15 @@ def mosaic(image_file_list:list, image_dir:str, label_dir:str,
                                     becomes smaller than min_visibility, we will drop that box.
     """
     # creat a new image
-    new_img = np.zeros((mo_h, mo_w, 3), dtype='uint8')     # 3 channels
+    new_img = np.empty((mo_h, mo_w, 3), dtype='uint8')     # 3 channels
 
     # split points
     div_point_x = int(mo_w * scale_x)
     div_point_y = int(mo_h * scale_y)
 
     # loop through images
-    num_images = len(image_file_list)
-    for i in range(num_images):
+    # for i in range(len(image_file_list)):
+    for i in range(4):
         # top left image, img_0
         if not i: # i == 0
             # width and height of the top left image
@@ -187,24 +206,15 @@ def mosaic(image_file_list:list, image_dir:str, label_dir:str,
     new_bboxes = bboxes_0_new + bboxes_1_new + bboxes_2_new + bboxes_3_new
 
     # path to save image and label
-    image_store_path = osp.sep.join([output_image_dir, 'mo_' + \
-                                    image_file_list[0].split('.')[0] + '_' + \
-                                    image_file_list[1].split('.')[0] + '_' + \
-                                    image_file_list[2].split('.')[0] + '_' + \
-                                    image_file_list[3].split('.')[0] + '.jpg'])
-    
-    label_store_path = osp.sep.join([output_label_dir, 'mo_' + \
-                                    image_file_list[0].split('.')[0] + '_' + \
-                                    image_file_list[1].split('.')[0] + '_' + \
-                                    image_file_list[2].split('.')[0] + '_' + \
-                                    image_file_list[3].split('.')[0] + '.txt'])
+    image_store_path, label_store_path = create_data_store_path(
+        output_image_dir, output_label_dir, image_file_list)
     
     # save the augmented image and labels (bounding boxes)
     utils.save_img(new_img, image_store_path )
     utils.save_label(new_bboxes, new_class_labels, label_store_path)
 
-    """ If you want to see the augmented with their bounding boxes, if not please COMMENT row below """
-    utils.display_img(image_store_path, label_store_path)
+    r""" If you want to see the augmented with their bounding boxes, if not please COMMENT row below """
+    if display: utils.display_img(image_store_path, label_store_path)
 
 
 if __name__ == "__main__":
@@ -259,4 +269,4 @@ if __name__ == "__main__":
     mosaic(image_file_list, image_dir, label_dir, 
            output_image_dir, output_label_dir, 
            mo_w, mo_h, scale_x, scale_y, 
-           min_area, min_visibility)
+           min_area, min_visibility, False)
