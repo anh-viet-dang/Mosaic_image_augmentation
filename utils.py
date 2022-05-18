@@ -1,22 +1,26 @@
 import cv2
-import os
+import os.path as osp
+import numpy as np
 
-def preprocess(image_name, image_dir, label_dir):
-    """
+
+def preprocess(image_name:str, image_dir:str, label_dir:str) -> tuple:
+    r"""
         Get image path, label path, label name
         image_name: For exxmaple img_0.png
         image_dir: original image directory
         label_dir: orrigianl label directory
     """
-    image_path = os.path.sep.join([image_dir, image_name])
+    image_path = osp.sep.join([image_dir, image_name])
     # get name of image
     name = image_name.split('.')[0]
     label_name = name + '.txt'
-    label_path = os.path.sep.join([label_dir, label_name])
+    label_path = osp.sep.join([label_dir, label_name])
 
     return image_path, label_path, label_name
 
-def draw_rect(img, bboxes, color=(255, 0, 0)):
+
+def draw_rect(img:np.ndarray, bboxes, 
+              color:tuple=(255, 0, 0)) -> np.ndarray:
     """
         Draw bounding boxes on an image
     """
@@ -32,8 +36,9 @@ def draw_rect(img, bboxes, color=(255, 0, 0)):
         img = cv2.rectangle(img, (x, y), (x+w, y+h), color, 1)
     return img
 
-def read_img(image_path, cvt_color=True):
-    """
+
+def read_img(image_path:str, cvt_color:bool=True) -> np.ndarray:
+    r"""
         Read image, convert from BGR (OpenCV) to RGB (Albumentation use that)
     """
     img = cv2.imread(image_path)
@@ -41,8 +46,9 @@ def read_img(image_path, cvt_color=True):
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # thấy ví dụ cần chuyển
     return img
 
-def save_img(image, save_path, jpg_quality=None):
-    """
+
+def save_img(image:np.ndarray, save_path:str, jpg_quality=None) -> None:
+    r"""
         Save image with option to compress image
     """
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)   # do ảnh từ albumentation là RGB
@@ -52,7 +58,8 @@ def save_img(image, save_path, jpg_quality=None):
     else:
         cv2.imwrite(save_path, image)
 
-def display_img(image_path, label_path):
+
+def display_img(image_path:str, label_path:str) -> None:
     """
         Display image with bounding boxes
     """
@@ -62,7 +69,8 @@ def display_img(image_path, label_path):
     cv2.imshow('Image', img)
     cv2.waitKey(0)
 
-def read_label(label_path):
+
+def read_label(label_path:str) -> tuple:
     """
         Read label from label file .txt (YOLO format)
     """
@@ -77,9 +85,10 @@ def read_label(label_path):
         center_x, center_y, w, h = float(cont[1]), float(cont[2]), float(cont[3]), float(cont[4])
         bboxes.append([center_x, center_y, w, h])
         class_labels.append(cont[0])
-    return (bboxes, class_labels)
+    return bboxes, class_labels
 
-def save_label(bboxes, class_labels, label_path):
+
+def save_label(bboxes:list, class_labels, label_path:str) -> None:
     """
         Save the label
     """
@@ -92,7 +101,8 @@ def save_label(bboxes, class_labels, label_path):
     with open(label_path, 'w') as f:
         f.writelines(tem_lst)
 
-"""
+
+r"""
     Chuyển bboxes ở dạng list (nested list) và class_labels ở dạng list để tạo lại file label
     ['1 0.221094 0.339583 0.051562 0.101389\n', '1 0.530469 0.517361 0.053125 0.129167\n']
     Khi đọc hết file label sẽ có dạng như này, tận dụng nó để tạo lại file label
