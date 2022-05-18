@@ -188,16 +188,16 @@ def mosaic(image_file_list:list, image_dir:str, label_dir:str,
 
     # path to save image and label
     image_store_path = osp.sep.join([output_image_dir, 'mo_' + \
-        image_file_list[0].split('.')[0] + '_' + \
-            image_file_list[1].split('.')[0] + '_' + \
-                image_file_list[2].split('.')[0] + '_' + \
-                    image_file_list[3].split('.')[0] + '.jpg'])
+                                    image_file_list[0].split('.')[0] + '_' + \
+                                    image_file_list[1].split('.')[0] + '_' + \
+                                    image_file_list[2].split('.')[0] + '_' + \
+                                    image_file_list[3].split('.')[0] + '.jpg'])
     
     label_store_path = osp.sep.join([output_label_dir, 'mo_' + \
-        image_file_list[0].split('.')[0] + '_' + \
-            image_file_list[1].split('.')[0] + '_' + \
-                image_file_list[2].split('.')[0] + '_' + \
-                    image_file_list[3].split('.')[0] + '.txt'])
+                                    image_file_list[0].split('.')[0] + '_' + \
+                                    image_file_list[1].split('.')[0] + '_' + \
+                                    image_file_list[2].split('.')[0] + '_' + \
+                                    image_file_list[3].split('.')[0] + '.txt'])
     
     # save the augmented image and labels (bounding boxes)
     utils.save_img(new_img, image_store_path )
