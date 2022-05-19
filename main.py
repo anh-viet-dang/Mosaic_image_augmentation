@@ -1,10 +1,13 @@
 import argparse
-import os.path as osp
 import os
+import os.path as osp
 import random
 from uuid import uuid4
+
 import albumentations as A
 import numpy as np
+from colorama import Fore
+from nanoid import generate
 
 import utils
 
@@ -100,10 +103,8 @@ def mosaic(image_file_list:list, image_dir:str, label_dir:str,
     div_point_y = int(mo_h * scale_y)
 
     # loop through images
-    # for i in range(len(image_file_list)):
-    for i in range(4):
-        # top left image, img_0
-        if not i: # i == 0
+    for i in range(4): # for i in range(len(image_file_list)):
+        if not i: # i == 0 || top left image, img_0
             # width and height of the top left image
             w0 = div_point_x
             h0 = div_point_y
@@ -131,8 +132,7 @@ def mosaic(image_file_list:list, image_dir:str, label_dir:str,
                 bboxes_0_new[i][1] = box[1] * scale_y   # ycenter
                 bboxes_0_new[i][3] = box[3] * scale_y   # h
                 
-        # top right image
-        elif i == 1:
+        elif i == 1: # top right image
             w1 = mo_w - div_point_x     # trừ sẽ khớp
             h1 = div_point_y    # giữ nguyên như cái i=0
             img_1, bboxes_1, class_labels_1 = random_crop_savebboxes(
@@ -154,8 +154,7 @@ def mosaic(image_file_list:list, image_dir:str, label_dir:str,
                 bboxes_1_new[i][1] = box[1] * scale_y       # ycenter
                 bboxes_1_new[i][3] = box[3] * scale_y       # h
         
-        # bottom left image
-        elif i == 2:
+        elif i == 2: # bottom left image
             w2 = div_point_x
             h2 = mo_h - div_point_y
             img_2, bboxes_2, class_labels_2 = random_crop_savebboxes(
@@ -177,8 +176,7 @@ def mosaic(image_file_list:list, image_dir:str, label_dir:str,
                 bboxes_2_new[i][1] = box[1] * (1 - scale_y) + scale_y       # ycenter
                 bboxes_2_new[i][3] = box[3] * (1 - scale_y)                 # h
 
-        # bottom right image
-        else:
+        else: # bottom right image
             w3 = mo_w - div_point_x
             h3 = mo_h - div_point_y
             img_3, bboxes_3, class_labels_3 = random_crop_savebboxes(
@@ -217,56 +215,42 @@ def mosaic(image_file_list:list, image_dir:str, label_dir:str,
     if display: utils.display_img(image_store_path, label_store_path)
 
 
-if __name__ == "__main__":
-
-    ap = argparse.ArgumentParser()
+def create_args():
+    ap = argparse.ArgumentParser(description="Mosiac image augumentation with yolo annotation")
+    ap.add_argument("--ip_dir", required=True, type=str, help="input folder contain both image and yolo annotation")
+    ap.add_argument("--op_dir", required=True, type=str, help="output folder contain both image and yolo annotation")
     ap.add_argument("--width", default=800, required=True, type=int, help="width of mosaic-augmented image")
     ap.add_argument("--height", default=800, required=True, type=int, help="height of mosaic-augmented image")
-    ap.add_argument("--scale_x", default=0.4, required=True, type=float, help="scale_x - scale by width => define width of the top left image")
-    ap.add_argument("--scale_y", default=0.6, required=True, type=float, help="scale_y - scale by height => define height of the top left image")
-    ap.add_argument("--min_area", default=200, required=True, type=int, help="min area of box after augmentation we will keep")
-    ap.add_argument("--min_vi", default=0.1, required=True, type=float, help="min area ratio of box after/before augmentation we will keep")
-    args = vars(ap.parse_args())
-
-    # width and height of mosaic-augmented image
-    mo_w = args["width"]
-    mo_h = args["height"]
     
     # scale by width and height => we can define size of each image
-    scale_x = args["scale_x"]
-    scale_y = args["scale_y"]
+    ap.add_argument("--scale_x", default=0.4, required=True, type=float, help="scale_x - scale by width => define width of the top left image")
+    ap.add_argument("--scale_y", default=0.6, required=True, type=float, help="scale_y - scale by height => define height of the top left image")
+    ap.add_argument("--min_area", default=200, required=True, type=int, help="min area of box after augmentation we will keep. If area of box < min_area we will drop the box")
+    ap.add_argument("--min_vi", default=0.1, required=True, type=float, help="min area ratio of box after/before augmentation we will keep")
+    
+    return ap.parse_args()
 
-    # min area of box after augmentation we will keep. If area of box < min_area we will drop the box
-    min_area = args["min_area"]
-    # min ratio area of box after/before we will keep
-    min_visibility = args["min_vi"]
 
+if __name__ == "__main__":
+    args = create_args()
     # create folder to store augmented images and correspond labels
-    if not osp.exists('augmentation/mosaic_images'):  
-        os.makedirs('augmentation/mosaic_images')     
-
-    # output dir for augmented images
-    output_image_dir = 'augmentation/mosaic_images'
-
-    if not osp.exists('augmentation/mosaic_labels'):  
-        os.makedirs('augmentation/mosaic_labels')    
-
-    # output dir for new boxes
-    output_label_dir = 'augmentation/mosaic_labels'
+    if not osp.exists(args.op_dir): os.makedirs(args.op_dir)
 
     r"""
-        Note: Image and label have the same name. For example: image_1.jpeg - image_1.txt
+        Note: Image and label must have the same name.
+        For example: image_1.jpeg - image_1.txt
     """
     print('Processing...')
-    image_dir = 'images'
-    label_dir = 'labels'
 
     # get a list of all images
-    list_image_names = os.listdir(image_dir)    
+    pics = [img for img in os.listdir(args.ip_dir) 
+            if img.endswith('.jpg') or img.endswith('.jpeg') or img.endswith('.png')]
     # randomly get 4 images
-    image_file_list = random.choices(list_image_names, k=4)
+    image_file_list = random.choices(pics, k=4)
     # perform augmentation
-    mosaic(image_file_list, image_dir, label_dir, 
-           output_image_dir, output_label_dir, 
-           mo_w, mo_h, scale_x, scale_y, 
-           min_area, min_visibility, False)
+    mosaic(image_file_list, 
+           args.ip_dir, args.ip_dir, 
+           args.op_dir, args.op_dir, 
+           args.width, args.height, 
+           args.scale_x, args.scale_y, 
+           args.min_area, args.min_vi, False)
