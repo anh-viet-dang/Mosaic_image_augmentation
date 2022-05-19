@@ -2,7 +2,7 @@
 
 Run code to perform mosaic augmentation:
 ```python
-python main.py --width 800 --height 800 --scale_x 0.4 --scale_y 0.6 --min_area 500 --min_vi 0.3
+python python main.py --ip_dir images --op_dir augmentation  --width 800 --height 800 --scale_x 0.4 --scale_y 0.6 --min_area 500 --min_vi 0.25
 ```
 
 You can change parameters to fit with your dataset. To know details about arguments in the command above, run
